@@ -18,7 +18,7 @@ stations:
       url: "https://fip-metadata.fly.dev/api/metadata/fip"
       poll_ms: 3000
       build:
-        format: "StreamTitle='{artist} - {title}';StreamUrl='http://localhost:8000/fip/stream';"
+        format: "StreamTitle='{artist} - {title}';Title='{title}';Artist='{artist}';StreamUrl='http://localhost:8000/fip/stream';"
         strip_single_quotes: true
         normalize_whitespace: true
         fallback_key_order:
