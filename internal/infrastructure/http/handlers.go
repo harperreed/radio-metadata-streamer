@@ -1,0 +1,134 @@
+// ABOUTME: HTTP handlers for station endpoints
+// ABOUTME: Implements stream, metadata, and health check routes
+package http
+
+import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"strings"
+
+	"github.com/harper/radio-metadata-proxy/internal/application/manager"
+)
+
+type StreamHandler struct {
+	mgr *manager.Manager
+}
+
+func NewStreamHandler(mgr *manager.Manager) *StreamHandler {
+	return &StreamHandler{mgr: mgr}
+}
+
+func (h *StreamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// Extract station ID from path: /{station}/stream
+	parts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
+	if len(parts) != 2 || parts[1] != "stream" {
+		http.NotFound(w, r)
+		return
+	}
+
+	stationID := parts[0]
+	st := h.mgr.Get(stationID)
+	if st == nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	// Set ICY headers
+	w.Header().Set("Content-Type", "audio/mpeg")
+	w.Header().Set("icy-name", st.ICYName())
+	w.Header().Set("icy-br", fmt.Sprintf("%d", st.BitrateHint()))
+	w.Header().Set("icy-metaint", fmt.Sprintf("%d", st.MetaInt()))
+	w.Header().Set("Cache-Control", "no-store")
+	w.Header().Set("Connection", "close")
+
+	// TODO: Implement actual streaming when station goroutines are ready
+	w.WriteHeader(http.StatusOK)
+}
+
+type MetaHandler struct {
+	mgr *manager.Manager
+}
+
+func NewMetaHandler(mgr *manager.Manager) *MetaHandler {
+	return &MetaHandler{mgr: mgr}
+}
+
+func (h *MetaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	parts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
+	if len(parts) != 2 || parts[1] != "meta" {
+		http.NotFound(w, r)
+		return
+	}
+
+	stationID := parts[0]
+	st := h.mgr.Get(stationID)
+	if st == nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	type response struct {
+		Current      string  `json:"current"`
+		UpdatedAt    *string `json:"updated_at,omitempty"`
+		SourceHealthy bool   `json:"sourceHealthy"`
+	}
+
+	var updatedAt *string
+	if t := st.LastMetadataUpdate(); t != nil {
+		s := t.Format("2006-01-02T15:04:05Z07:00")
+		updatedAt = &s
+	}
+
+	resp := response{
+		Current:      st.CurrentMetadata(),
+		UpdatedAt:    updatedAt,
+		SourceHealthy: st.SourceHealthy(),
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(resp)
+}
+
+type StationsHandler struct {
+	mgr *manager.Manager
+}
+
+func NewStationsHandler(mgr *manager.Manager) *StationsHandler {
+	return &StationsHandler{mgr: mgr}
+}
+
+func (h *StationsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	type stationInfo struct {
+		ID            string `json:"id"`
+		StreamURL     string `json:"stream_url"`
+		MetaURL       string `json:"meta_url"`
+		Clients       int    `json:"clients"`
+		SourceHealthy bool   `json:"sourceHealthy"`
+	}
+
+	stations := h.mgr.List()
+	result := make([]stationInfo, 0, len(stations))
+
+	for _, st := range stations {
+		result = append(result, stationInfo{
+			ID:            st.ID(),
+			StreamURL:     fmt.Sprintf("/%s/stream", st.ID()),
+			MetaURL:       fmt.Sprintf("/%s/meta", st.ID()),
+			Clients:       st.ClientCount(),
+			SourceHealthy: st.SourceHealthy(),
+		})
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(result)
+}
+
+func HealthzHandler(w http.ResponseWriter, r *http.Request) {
+	type response struct {
+		OK bool `json:"ok"`
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response{OK: true})
+}
