@@ -1,0 +1,19 @@
+services:
+  icyproxy:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: radio-metadata-proxy
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./config.yaml:/etc/icyproxy/config.yaml:ro
+    restart: unless-stopped
+    environment:
+      - TZ=America/Chicago
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8000/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s

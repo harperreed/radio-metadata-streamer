@@ -12,18 +12,31 @@ Multi-station ICY metadata proxy for streaming radio with custom metadata inject
 
 ## Quick Start
 
+### Docker Compose (Recommended)
+
+```bash
+# Edit config.yaml with your stations
+docker compose up -d
+
+# View logs
+docker compose logs -f
+
+# Stop
+docker compose down
+```
+
 ### Binary
 
 ```bash
 go build -o icyproxy ./cmd/icyproxy
-./icyproxy configs/example.yaml
+./icyproxy config.yaml
 ```
 
 ### Docker
 
 ```bash
 docker build -t icyproxy .
-docker run -p 8000:8000 -v ./myconfig.yaml:/etc/icyproxy/config.yaml icyproxy
+docker run -p 8000:8000 -v $(pwd)/config.yaml:/app/config.yaml:ro icyproxy
 ```
 
 ## Usage
