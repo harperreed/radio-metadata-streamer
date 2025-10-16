@@ -9,6 +9,8 @@ import (
 	"strings"
 
 	"github.com/harper/radio-metadata-proxy/internal/application/manager"
+	"github.com/harper/radio-metadata-proxy/internal/domain/station"
+	"github.com/harper/radio-metadata-proxy/internal/infrastructure/icy"
 )
 
 type StreamHandler struct {
@@ -42,8 +44,72 @@ func (h *StreamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("Connection", "close")
 
-	// TODO: Implement actual streaming when station goroutines are ready
 	w.WriteHeader(http.StatusOK)
+
+	// Subscribe to station chunks
+	client := &station.Client{ID: fmt.Sprintf("http-%p", r)}
+	chunks := st.Subscribe(client)
+	defer st.Unsubscribe(client)
+
+	// Stream with ICY metadata injection
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		return
+	}
+
+	metaInt := st.MetaInt()
+	bytesUntilMeta := metaInt
+	lastMeta := ""
+
+	for {
+		select {
+		case <-r.Context().Done():
+			return
+		case chunk, ok := <-chunks:
+			if !ok {
+				return
+			}
+
+			// Write chunk in pieces, injecting metadata at intervals
+			for len(chunk) > 0 {
+				// Write up to next metadata point
+				toWrite := len(chunk)
+				if toWrite > bytesUntilMeta {
+					toWrite = bytesUntilMeta
+				}
+
+				n, err := w.Write(chunk[:toWrite])
+				if err != nil {
+					return
+				}
+
+				chunk = chunk[n:]
+				bytesUntilMeta -= n
+
+				// Inject metadata if needed
+				if bytesUntilMeta == 0 {
+					meta := st.CurrentMetadata()
+					if meta == "" {
+						meta = "StreamTitle='';"
+					}
+
+					// Only send metadata if it changed
+					if meta != lastMeta {
+						lastMeta = meta
+					}
+
+					metaBlock := icy.BuildBlock(meta)
+					if _, err := w.Write(metaBlock); err != nil {
+						return
+					}
+
+					bytesUntilMeta = metaInt
+				}
+			}
+
+			flusher.Flush()
+		}
+	}
 }
 
 type MetaHandler struct {

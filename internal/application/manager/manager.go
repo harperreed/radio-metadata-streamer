@@ -96,8 +96,9 @@ func (m *Manager) Start() error {
 	defer m.mu.RUnlock()
 
 	for _, st := range m.stations {
-		// TODO: Start station goroutines when implemented
-		_ = st
+		if err := st.Start(); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -106,5 +107,16 @@ func (m *Manager) Start() error {
 func (m *Manager) Shutdown() error {
 	m.cancel()
 	m.wg.Wait()
+
+	// Shutdown all stations
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	for _, st := range m.stations {
+		if err := st.Shutdown(); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }

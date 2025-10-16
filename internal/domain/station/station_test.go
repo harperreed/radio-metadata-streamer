@@ -3,7 +3,13 @@
 package station
 
 import (
+	"bytes"
+	"context"
+	"io"
 	"testing"
+	"time"
+
+	"github.com/harper/radio-metadata-proxy/internal/infrastructure/ring"
 )
 
 func TestNew(t *testing.T) {
@@ -96,5 +102,115 @@ func TestStation_Properties(t *testing.T) {
 
 	if !s.SourceHealthy() {
 		t.Error("expected SourceHealthy true after set")
+	}
+}
+
+// Mock implementations for testing
+type mockSource struct {
+	data []byte
+}
+
+func (m *mockSource) Connect(ctx context.Context) (io.ReadCloser, error) {
+	return io.NopCloser(bytes.NewReader(m.data)), nil
+}
+
+type mockMetadataProvider struct {
+	meta string
+}
+
+func (m *mockMetadataProvider) Fetch(ctx context.Context) (string, error) {
+	return m.meta, nil
+}
+
+func TestStation_Start(t *testing.T) {
+	// Create test data
+	testData := bytes.Repeat([]byte("test audio data "), 100)
+
+	src := &mockSource{data: testData}
+	meta := &mockMetadataProvider{meta: "StreamTitle='Test Song';"}
+	buffer := ring.New(1024)
+
+	cfg := Config{
+		ID:             "test",
+		MetaInt:        16384,
+		PollInterval:   100 * time.Millisecond,
+		RingBufferSize: 1024,
+		ChunkBusCap:    32,
+	}
+
+	s := New(cfg, src, meta, buffer)
+
+	// Start station goroutines
+	err := s.Start()
+	if err != nil {
+		t.Fatalf("Start failed: %v", err)
+	}
+
+	// Wait for data to be read and buffered
+	time.Sleep(200 * time.Millisecond)
+
+	// Check that ring buffer has data
+	snapshot := buffer.Snapshot()
+	if len(snapshot) == 0 {
+		t.Error("expected ring buffer to contain data after Start")
+	}
+
+	// Check that metadata was polled
+	if s.CurrentMetadata() != "StreamTitle='Test Song';" {
+		t.Errorf("expected metadata to be polled, got %q", s.CurrentMetadata())
+	}
+
+	// Check that source is marked healthy
+	if !s.SourceHealthy() {
+		t.Error("expected source to be marked healthy after successful connection")
+	}
+
+	// Shutdown
+	err = s.Shutdown()
+	if err != nil {
+		t.Fatalf("Shutdown failed: %v", err)
+	}
+}
+
+func TestStation_Subscribe(t *testing.T) {
+	testData := bytes.Repeat([]byte("test"), 50)
+
+	src := &mockSource{data: testData}
+	meta := &mockMetadataProvider{meta: "StreamTitle='Test';"}
+	buffer := ring.New(1024)
+
+	cfg := Config{
+		ID:             "test",
+		MetaInt:        16384,
+		PollInterval:   100 * time.Millisecond,
+		RingBufferSize: 1024,
+		ChunkBusCap:    32,
+	}
+
+	s := New(cfg, src, meta, buffer)
+	s.Start()
+	defer s.Shutdown()
+
+	// Subscribe to chunks
+	client := &Client{ID: "test-client"}
+	chunks := s.Subscribe(client)
+
+	// Should receive chunks
+	select {
+	case chunk := <-chunks:
+		if len(chunk) == 0 {
+			t.Error("expected non-empty chunk")
+		}
+	case <-time.After(500 * time.Millisecond):
+		t.Error("timeout waiting for chunk")
+	}
+
+	// Unsubscribe
+	s.Unsubscribe(client)
+
+	// Should not receive more chunks after unsubscribe
+	// (drain any buffered chunks first)
+	for len(chunks) > 0 {
+		<-chunks
 	}
 }
