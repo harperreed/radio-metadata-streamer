@@ -1,0 +1,33 @@
+listen:
+  host: 0.0.0.0
+  port: 8000
+
+stations:
+  - id: "fip"
+    icy:
+      name: "FIP (proxy)"
+      metaint: 16384
+      bitrate_hint_kbps: 128
+    source:
+      url: "https://stream.radiofrance.fr/fip/fip.m3u8?id=radiofrance"
+      request_headers:
+        Icy-MetaData: "0"
+      connect_timeout_ms: 5000
+      read_timeout_ms: 15000
+    metadata:
+      url: "https://fip-metadata.fly.dev/api/metadata/fip"
+      poll_ms: 3000
+      build:
+        format: "StreamTitle='{artist} - {title}';"
+        strip_single_quotes: true
+        normalize_whitespace: true
+        fallback_key_order:
+          - artist
+          - title
+          - now.playing_item
+    buffering:
+      ring_bytes: 262144
+
+logging:
+  level: info
+  json: false
