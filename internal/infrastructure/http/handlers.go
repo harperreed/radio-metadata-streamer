@@ -36,13 +36,20 @@ func (h *StreamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Check if client wants ICY metadata
+	wantsMetadata := r.Header.Get("Icy-MetaData") == "1"
+
 	// Set ICY headers
 	w.Header().Set("Content-Type", "audio/mpeg")
 	w.Header().Set("icy-name", st.ICYName())
 	w.Header().Set("icy-br", fmt.Sprintf("%d", st.BitrateHint()))
-	w.Header().Set("icy-metaint", fmt.Sprintf("%d", st.MetaInt()))
 	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("Connection", "close")
+
+	// Only send metaint if client wants metadata
+	if wantsMetadata {
+		w.Header().Set("icy-metaint", fmt.Sprintf("%d", st.MetaInt()))
+	}
 
 	w.WriteHeader(http.StatusOK)
 
@@ -57,9 +64,14 @@ func (h *StreamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	metaInt := st.MetaInt()
-	bytesUntilMeta := metaInt
-	lastMeta := ""
+	var metaInt int
+	var bytesUntilMeta int
+	var lastMeta string
+
+	if wantsMetadata {
+		metaInt = st.MetaInt()
+		bytesUntilMeta = metaInt
+	}
 
 	for {
 		select {
@@ -72,38 +84,47 @@ func (h *StreamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 			// Write chunk in pieces, injecting metadata at intervals
 			for len(chunk) > 0 {
-				// Write up to next metadata point
-				toWrite := len(chunk)
-				if toWrite > bytesUntilMeta {
-					toWrite = bytesUntilMeta
-				}
-
-				n, err := w.Write(chunk[:toWrite])
-				if err != nil {
-					return
-				}
-
-				chunk = chunk[n:]
-				bytesUntilMeta -= n
-
-				// Inject metadata if needed
-				if bytesUntilMeta == 0 {
-					meta := st.CurrentMetadata()
-					if meta == "" {
-						meta = "StreamTitle='';"
+				if wantsMetadata {
+					// Write up to next metadata point
+					toWrite := len(chunk)
+					if toWrite > bytesUntilMeta {
+						toWrite = bytesUntilMeta
 					}
 
-					// Only send metadata if it changed
-					if meta != lastMeta {
-						lastMeta = meta
-					}
-
-					metaBlock := icy.BuildBlock(meta)
-					if _, err := w.Write(metaBlock); err != nil {
+					n, err := w.Write(chunk[:toWrite])
+					if err != nil {
 						return
 					}
 
-					bytesUntilMeta = metaInt
+					chunk = chunk[n:]
+					bytesUntilMeta -= n
+
+					// Inject metadata if needed
+					if bytesUntilMeta == 0 {
+						meta := st.CurrentMetadata()
+						if meta == "" {
+							meta = "StreamTitle='';"
+						}
+
+						// Only send metadata if it changed
+						if meta != lastMeta {
+							lastMeta = meta
+						}
+
+						metaBlock := icy.BuildBlock(meta)
+						if _, err := w.Write(metaBlock); err != nil {
+							return
+						}
+
+						bytesUntilMeta = metaInt
+					}
+				} else {
+					// No metadata - just stream audio directly
+					n, err := w.Write(chunk)
+					if err != nil {
+						return
+					}
+					chunk = chunk[n:]
 				}
 			}
 
