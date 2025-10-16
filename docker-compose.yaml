@@ -5,7 +5,7 @@ services:
       dockerfile: Dockerfile
     container_name: radio-metadata-proxy
     ports:
-      - "8000:8000"
+      - "31337:31337"
     volumes:
       - ./config.yaml:/etc/icyproxy/config.yaml:ro
     restart: unless-stopped

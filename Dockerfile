@@ -23,6 +23,6 @@ WORKDIR /app
 COPY --from=builder /app/icyproxy .
 COPY configs/example.yaml /etc/icyproxy/config.yaml
 
-EXPOSE 8000
+EXPOSE 31337
 
 CMD ["./icyproxy", "/etc/icyproxy/config.yaml"]
