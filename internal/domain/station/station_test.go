@@ -18,3 +18,24 @@ func TestNew(t *testing.T) {
 		t.Errorf("expected ID 'test', got %q", s.ID())
 	}
 }
+
+func TestStation_CurrentMetadata(t *testing.T) {
+	cfg := Config{
+		ID:      "test",
+		MetaInt: 16384,
+	}
+
+	s := New(cfg, nil, nil, nil)
+
+	// Initially empty
+	if meta := s.CurrentMetadata(); meta != "" {
+		t.Errorf("expected empty metadata, got %q", meta)
+	}
+
+	// Set metadata
+	s.UpdateMetadata("StreamTitle='Test';")
+
+	if meta := s.CurrentMetadata(); meta != "StreamTitle='Test';" {
+		t.Errorf("expected 'StreamTitle='Test';', got %q", meta)
+	}
+}

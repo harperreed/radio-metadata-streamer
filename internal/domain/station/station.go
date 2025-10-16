@@ -69,3 +69,21 @@ func New(cfg Config, source domain.StreamSource, metadata domain.MetadataProvide
 func (s *Station) ID() string {
 	return s.id
 }
+
+func (s *Station) CurrentMetadata() string {
+	p := s.currentMeta.Load()
+	if p == nil {
+		return ""
+	}
+	return *p
+}
+
+func (s *Station) UpdateMetadata(meta string) {
+	s.currentMeta.Store(&meta)
+	now := time.Now()
+	s.lastMetaAt.Store(&now)
+}
+
+func (s *Station) LastMetadataUpdate() *time.Time {
+	return s.lastMetaAt.Load()
+}
