@@ -55,6 +55,7 @@ func run() error {
 	// Station-specific routes
 	streamHandler := http.NewStreamHandler(mgr)
 	metaHandler := http.NewMetaHandler(mgr)
+	coverHandler := http.NewCoverHandler(mgr)
 
 	mux.HandleFunc("/", func(w nethttp.ResponseWriter, r *nethttp.Request) {
 		if len(r.URL.Path) > 7 && r.URL.Path[len(r.URL.Path)-7:] == "/stream" {
@@ -63,6 +64,10 @@ func run() error {
 		}
 		if len(r.URL.Path) > 5 && r.URL.Path[len(r.URL.Path)-5:] == "/meta" {
 			metaHandler.ServeHTTP(w, r)
+			return
+		}
+		if len(r.URL.Path) > 6 && r.URL.Path[len(r.URL.Path)-6:] == "/cover" {
+			coverHandler.ServeHTTP(w, r)
 			return
 		}
 		nethttp.NotFound(w, r)

@@ -18,12 +18,16 @@ stations:
       url: "https://fip-metadata.fly.dev/api/metadata/fip"
       poll_ms: 3000
       build:
-        format: "StreamTitle='{artist} - {title}';Title='{title}';Artist='{artist}';StreamUrl='http://localhost:8000/fip/stream';"
+        format: "StreamTitle='{artist} - {title}';Artist='{artist}';Title='{title}';Album='{album}';Artwork='{artwork}';StreamUrl='http://localhost:31337/fip/cover';"
         strip_single_quotes: true
         normalize_whitespace: true
         fallback_key_order:
-          - now.secondLine.title      # artist
+          - now.secondLine.title       # artist
           - now.firstLine.title        # title
+          - now.song.release.title     # album
+          - now.visual.src             # artwork (FIP uses visual.src for cover images)
+          - now.song.year              # year
+          - now.song.release.label     # label
     buffering:
       ring_bytes: 262144
 

@@ -69,8 +69,8 @@ func (h *HTTPProvider) Fetch(ctx context.Context) (string, error) {
 	// Build ICY string from format template with all placeholders
 	result := h.cfg.Build.Format
 
-	// Replace all placeholders: {artist}, {title}, {album}, {year}, etc.
-	placeholders := []string{"artist", "title", "album", "year", "label"}
+	// Replace all placeholders: {artist}, {title}, {album}, {artwork}, {year}, etc.
+	placeholders := []string{"artist", "title", "album", "artwork", "year", "label"}
 	for _, placeholder := range placeholders {
 		value := h.extractValue(data, placeholder)
 		result = strings.ReplaceAll(result, "{"+placeholder+"}", value)
@@ -93,13 +93,14 @@ func (h *HTTPProvider) extractValue(data map[string]interface{}, placeholder str
 	// If FallbackKeyOrder is configured, use it
 	if len(h.cfg.Build.FallbackKeyOrder) > 0 {
 		// Map placeholder to fallback path index
-		// Order: artist, title, album, year, label, ...
+		// Order: artist, title, album, artwork, year, label, ...
 		placeholderMap := map[string]int{
-			"artist": 0,
-			"title":  1,
-			"album":  2,
-			"year":   3,
-			"label":  4,
+			"artist":  0,
+			"title":   1,
+			"album":   2,
+			"artwork": 3,
+			"year":    4,
+			"label":   5,
 		}
 
 		if idx, ok := placeholderMap[placeholder]; ok && idx < len(h.cfg.Build.FallbackKeyOrder) {

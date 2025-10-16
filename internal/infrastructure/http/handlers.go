@@ -214,3 +214,49 @@ func HealthzHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response{OK: true})
 }
+
+// CoverHandler redirects to (or serves) the current artwork URL for a station.
+type CoverHandler struct {
+	mgr *manager.Manager
+}
+
+func NewCoverHandler(mgr *manager.Manager) *CoverHandler {
+	return &CoverHandler{mgr: mgr}
+}
+
+func (h *CoverHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	parts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
+	if len(parts) != 2 || parts[1] != "cover" {
+		http.NotFound(w, r)
+		return
+	}
+
+	stationID := parts[0]
+	st := h.mgr.Get(stationID)
+	if st == nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	meta := st.CurrentMetadata()
+	// Parse Artwork='...'; from the ICY string
+	art := extractKV(meta, "Artwork")
+	if art == "" {
+		http.NotFound(w, r)
+		return
+	}
+
+	http.Redirect(w, r, art, http.StatusFound)
+}
+
+// extractKV finds Key='value'; in a semicolon-separated ICY string.
+func extractKV(icy string, key string) string {
+	keyEq := key + "='"
+	if i := strings.Index(icy, keyEq); i >= 0 {
+		rest := icy[i+len(keyEq):]
+		if j := strings.Index(rest, "';"); j >= 0 {
+			return rest[:j]
+		}
+	}
+	return ""
+}
