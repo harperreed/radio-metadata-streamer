@@ -65,3 +65,36 @@ func TestStation_ClientManagement(t *testing.T) {
 		t.Errorf("expected 0 clients after removal, got %d", count)
 	}
 }
+
+func TestStation_Properties(t *testing.T) {
+	cfg := Config{
+		ID:          "fip",
+		ICYName:     "FIP Radio",
+		MetaInt:     16384,
+		BitrateHint: 128,
+	}
+
+	s := New(cfg, nil, nil, nil)
+
+	if s.ICYName() != "FIP Radio" {
+		t.Errorf("expected ICYName 'FIP Radio', got %q", s.ICYName())
+	}
+
+	if s.MetaInt() != 16384 {
+		t.Errorf("expected MetaInt 16384, got %d", s.MetaInt())
+	}
+
+	if s.BitrateHint() != 128 {
+		t.Errorf("expected BitrateHint 128, got %d", s.BitrateHint())
+	}
+
+	if s.SourceHealthy() {
+		t.Error("expected SourceHealthy false initially")
+	}
+
+	s.SetSourceHealthy(true)
+
+	if !s.SourceHealthy() {
+		t.Error("expected SourceHealthy true after set")
+	}
+}

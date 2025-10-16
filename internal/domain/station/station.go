@@ -105,3 +105,23 @@ func (s *Station) ClientCount() int {
 	defer s.clientsMu.Unlock()
 	return len(s.clients)
 }
+
+func (s *Station) ICYName() string {
+	return s.icyName
+}
+
+func (s *Station) MetaInt() int {
+	return s.metaInt
+}
+
+func (s *Station) BitrateHint() int {
+	return s.bitrateHint
+}
+
+func (s *Station) SourceHealthy() bool {
+	return s.sourceHealthy.Load()
+}
+
+func (s *Station) SetSourceHealthy(healthy bool) {
+	s.sourceHealthy.Store(healthy)
+}
