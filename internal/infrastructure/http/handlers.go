@@ -106,11 +106,8 @@ func (h *StreamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							meta = "StreamTitle='';"
 						}
 
-						// Only send metadata if it changed
-						if meta != lastMeta {
-							lastMeta = meta
-						}
-
+						// Always send metadata at intervals (ICY spec requires it)
+						lastMeta = meta
 						metaBlock := icy.BuildBlock(meta)
 						if _, err := w.Write(metaBlock); err != nil {
 							return
