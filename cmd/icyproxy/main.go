@@ -57,11 +57,11 @@ func run() error {
 	metaHandler := http.NewMetaHandler(mgr)
 
 	mux.HandleFunc("/", func(w nethttp.ResponseWriter, r *nethttp.Request) {
-		if len(r.URL.Path) > 1 && r.URL.Path[len(r.URL.Path)-7:] == "/stream" {
+		if len(r.URL.Path) > 7 && r.URL.Path[len(r.URL.Path)-7:] == "/stream" {
 			streamHandler.ServeHTTP(w, r)
 			return
 		}
-		if len(r.URL.Path) > 1 && r.URL.Path[len(r.URL.Path)-5:] == "/meta" {
+		if len(r.URL.Path) > 5 && r.URL.Path[len(r.URL.Path)-5:] == "/meta" {
 			metaHandler.ServeHTTP(w, r)
 			return
 		}

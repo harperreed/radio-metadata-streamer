@@ -52,6 +52,7 @@ type Client struct {
 }
 
 func New(cfg Config, source domain.StreamSource, metadata domain.MetadataProvider, buffer *ring.Buffer) *Station {
+	ctx, cancel := context.WithCancel(context.Background())
 	return &Station{
 		id:           cfg.ID,
 		icyName:      cfg.ICYName,
@@ -63,6 +64,8 @@ func New(cfg Config, source domain.StreamSource, metadata domain.MetadataProvide
 		pollInterval: cfg.PollInterval,
 		clients:      make(map[*Client]struct{}),
 		chunkBus:     make(chan []byte, cfg.ChunkBusCap),
+		ctx:          ctx,
+		cancel:       cancel,
 	}
 }
 
