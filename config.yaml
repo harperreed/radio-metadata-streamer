@@ -18,16 +18,296 @@ stations:
       url: "https://fip-metadata.fly.dev/api/metadata/fip"
       poll_ms: 3000
       build:
-        format: "StreamTitle='{artist} - {title}';Artist='{artist}';Title='{title}';Album='{album}';Artwork='{artwork}';StreamUrl='http://localhost:31337/fip/cover';"
+        format: "StreamTitle='{artist} - {title} ({album})';Artist='{artist}';Title='{title}';Album='{album}';Artwork='{artwork}';StreamUrl='http://localhost:31337/fip/cover';"
         strip_single_quotes: true
         normalize_whitespace: true
         fallback_key_order:
           - now.secondLine.title       # artist
           - now.firstLine.title        # title
           - now.song.release.title     # album
-          - now.visual.src             # artwork (FIP uses visual.src for cover images)
+          - now.visuals.card.src       # artwork (FIP uses visuals.card.src for cover images)
           - now.song.year              # year
           - now.song.release.label     # label
+    buffering:
+      ring_bytes: 262144
+
+  - id: "fip-pop"
+    icy:
+      name: "FIP Pop (proxy)"
+      metaint: 16384
+      bitrate_hint_kbps: 128
+    source:
+      url: "https://icecast.radiofrance.fr/fippop-midfi.mp3?id=radiofrance"
+      request_headers:
+        Icy-MetaData: "0"
+      connect_timeout_ms: 5000
+      read_timeout_ms: 15000
+    metadata:
+      url: "https://fip-metadata.fly.dev/api/metadata/fip_pop"
+      poll_ms: 3000
+      build:
+        format: "StreamTitle='{artist} - {title} ({album})';Artist='{artist}';Title='{title}';Album='{album}';Artwork='{artwork}';StreamUrl='http://localhost:31337/fip-pop/cover';"
+        strip_single_quotes: true
+        normalize_whitespace: true
+        fallback_key_order:
+          - now.secondLine.title
+          - now.firstLine.title
+          - now.song.release.title
+          - now.visual.src
+          - now.song.year
+          - now.song.release.label
+    buffering:
+      ring_bytes: 262144
+
+  - id: "fip-metal"
+    icy:
+      name: "FIP Metal (proxy)"
+      metaint: 16384
+      bitrate_hint_kbps: 128
+    source:
+      url: "https://icecast.radiofrance.fr/fipmetal-midfi.mp3?id=radiofrance"
+      request_headers:
+        Icy-MetaData: "0"
+      connect_timeout_ms: 5000
+      read_timeout_ms: 15000
+    metadata:
+      url: "https://fip-metadata.fly.dev/api/metadata/fip_metal"
+      poll_ms: 3000
+      build:
+        format: "StreamTitle='{artist} - {title} ({album})';Artist='{artist}';Title='{title}';Album='{album}';Artwork='{artwork}';StreamUrl='http://localhost:31337/fip-metal/cover';"
+        strip_single_quotes: true
+        normalize_whitespace: true
+        fallback_key_order:
+          - now.secondLine.title
+          - now.firstLine.title
+          - now.song.release.title
+          - now.visual.src
+          - now.song.year
+          - now.song.release.label
+    buffering:
+      ring_bytes: 262144
+
+  - id: "fip-hiphop"
+    icy:
+      name: "FIP Hip-Hop (proxy)"
+      metaint: 16384
+      bitrate_hint_kbps: 128
+    source:
+      url: "https://icecast.radiofrance.fr/fiphophop-midfi.mp3?id=radiofrance"
+      request_headers:
+        Icy-MetaData: "0"
+      connect_timeout_ms: 5000
+      read_timeout_ms: 15000
+    metadata:
+      url: "https://fip-metadata.fly.dev/api/metadata/fip_hiphop"
+      poll_ms: 3000
+      build:
+        format: "StreamTitle='{artist} - {title} ({album})';Artist='{artist}';Title='{title}';Album='{album}';Artwork='{artwork}';StreamUrl='http://localhost:31337/fip-hiphop/cover';"
+        strip_single_quotes: true
+        normalize_whitespace: true
+        fallback_key_order:
+          - now.secondLine.title
+          - now.firstLine.title
+          - now.song.release.title
+          - now.visual.src
+          - now.song.year
+          - now.song.release.label
+    buffering:
+      ring_bytes: 262144
+
+  - id: "fip-reggae"
+    icy:
+      name: "FIP Reggae (proxy)"
+      metaint: 16384
+      bitrate_hint_kbps: 128
+    source:
+      url: "https://icecast.radiofrance.fr/fipreggae-midfi.mp3?id=radiofrance"
+      request_headers:
+        Icy-MetaData: "0"
+      connect_timeout_ms: 5000
+      read_timeout_ms: 15000
+    metadata:
+      url: "https://fip-metadata.fly.dev/api/metadata/fip_reggae"
+      poll_ms: 3000
+      build:
+        format: "StreamTitle='{artist} - {title} ({album})';Artist='{artist}';Title='{title}';Album='{album}';Artwork='{artwork}';StreamUrl='http://localhost:31337/fip-reggae/cover';"
+        strip_single_quotes: true
+        normalize_whitespace: true
+        fallback_key_order:
+          - now.secondLine.title
+          - now.firstLine.title
+          - now.song.release.title
+          - now.visual.src
+          - now.song.year
+          - now.song.release.label
+    buffering:
+      ring_bytes: 262144
+
+  - id: "fip-rock"
+    icy:
+      name: "FIP Rock (proxy)"
+      metaint: 16384
+      bitrate_hint_kbps: 128
+    source:
+      url: "https://icecast.radiofrance.fr/fiprock-midfi.mp3?id=radiofrance"
+      request_headers:
+        Icy-MetaData: "0"
+      connect_timeout_ms: 5000
+      read_timeout_ms: 15000
+    metadata:
+      url: "https://fip-metadata.fly.dev/api/metadata/fip_rock"
+      poll_ms: 3000
+      build:
+        format: "StreamTitle='{artist} - {title} ({album})';Artist='{artist}';Title='{title}';Album='{album}';Artwork='{artwork}';StreamUrl='http://localhost:31337/fip-rock/cover';"
+        strip_single_quotes: true
+        normalize_whitespace: true
+        fallback_key_order:
+          - now.secondLine.title
+          - now.firstLine.title
+          - now.song.release.title
+          - now.visual.src
+          - now.song.year
+          - now.song.release.label
+    buffering:
+      ring_bytes: 262144
+
+  - id: "fip-jazz"
+    icy:
+      name: "FIP Jazz (proxy)"
+      metaint: 16384
+      bitrate_hint_kbps: 128
+    source:
+      url: "https://icecast.radiofrance.fr/fipjazz-midfi.mp3?id=radiofrance"
+      request_headers:
+        Icy-MetaData: "0"
+      connect_timeout_ms: 5000
+      read_timeout_ms: 15000
+    metadata:
+      url: "https://fip-metadata.fly.dev/api/metadata/fip_jazz"
+      poll_ms: 3000
+      build:
+        format: "StreamTitle='{artist} - {title} ({album})';Artist='{artist}';Title='{title}';Album='{album}';Artwork='{artwork}';StreamUrl='http://localhost:31337/fip-jazz/cover';"
+        strip_single_quotes: true
+        normalize_whitespace: true
+        fallback_key_order:
+          - now.secondLine.title
+          - now.firstLine.title
+          - now.song.release.title
+          - now.visual.src
+          - now.song.year
+          - now.song.release.label
+    buffering:
+      ring_bytes: 262144
+
+  - id: "fip-groove"
+    icy:
+      name: "FIP Groove (proxy)"
+      metaint: 16384
+      bitrate_hint_kbps: 128
+    source:
+      url: "https://icecast.radiofrance.fr/fipgroove-midfi.mp3?id=radiofrance"
+      request_headers:
+        Icy-MetaData: "0"
+      connect_timeout_ms: 5000
+      read_timeout_ms: 15000
+    metadata:
+      url: "https://fip-metadata.fly.dev/api/metadata/fip_groove"
+      poll_ms: 3000
+      build:
+        format: "StreamTitle='{artist} - {title} ({album})';Artist='{artist}';Title='{title}';Album='{album}';Artwork='{artwork}';StreamUrl='http://localhost:31337/fip-groove/cover';"
+        strip_single_quotes: true
+        normalize_whitespace: true
+        fallback_key_order:
+          - now.secondLine.title
+          - now.firstLine.title
+          - now.song.release.title
+          - now.visual.src
+          - now.song.year
+          - now.song.release.label
+    buffering:
+      ring_bytes: 262144
+
+  - id: "fip-world"
+    icy:
+      name: "FIP World (proxy)"
+      metaint: 16384
+      bitrate_hint_kbps: 128
+    source:
+      url: "https://icecast.radiofrance.fr/fipworld-midfi.mp3?id=radiofrance"
+      request_headers:
+        Icy-MetaData: "0"
+      connect_timeout_ms: 5000
+      read_timeout_ms: 15000
+    metadata:
+      url: "https://fip-metadata.fly.dev/api/metadata/fip_world"
+      poll_ms: 3000
+      build:
+        format: "StreamTitle='{artist} - {title} ({album})';Artist='{artist}';Title='{title}';Album='{album}';Artwork='{artwork}';StreamUrl='http://localhost:31337/fip-world/cover';"
+        strip_single_quotes: true
+        normalize_whitespace: true
+        fallback_key_order:
+          - now.secondLine.title
+          - now.firstLine.title
+          - now.song.release.title
+          - now.visual.src
+          - now.song.year
+          - now.song.release.label
+    buffering:
+      ring_bytes: 262144
+
+  - id: "fip-nouveautes"
+    icy:
+      name: "FIP Nouveautes (proxy)"
+      metaint: 16384
+      bitrate_hint_kbps: 128
+    source:
+      url: "https://icecast.radiofrance.fr/fipnouveautes-midfi.mp3?id=radiofrance"
+      request_headers:
+        Icy-MetaData: "0"
+      connect_timeout_ms: 5000
+      read_timeout_ms: 15000
+    metadata:
+      url: "https://fip-metadata.fly.dev/api/metadata/fip_nouveautes"
+      poll_ms: 3000
+      build:
+        format: "StreamTitle='{artist} - {title} ({album})';Artist='{artist}';Title='{title}';Album='{album}';Artwork='{artwork}';StreamUrl='http://localhost:31337/fip-nouveautes/cover';"
+        strip_single_quotes: true
+        normalize_whitespace: true
+        fallback_key_order:
+          - now.secondLine.title
+          - now.firstLine.title
+          - now.song.release.title
+          - now.visual.src
+          - now.song.year
+          - now.song.release.label
+    buffering:
+      ring_bytes: 262144
+
+  - id: "fip-electro"
+    icy:
+      name: "FIP Electro (proxy)"
+      metaint: 16384
+      bitrate_hint_kbps: 128
+    source:
+      url: "https://icecast.radiofrance.fr/fipelectro-midfi.mp3?id=radiofrance"
+      request_headers:
+        Icy-MetaData: "0"
+      connect_timeout_ms: 5000
+      read_timeout_ms: 15000
+    metadata:
+      url: "https://fip-metadata.fly.dev/api/metadata/fip_electro"
+      poll_ms: 3000
+      build:
+        format: "StreamTitle='{artist} - {title} ({album})';Artist='{artist}';Title='{title}';Album='{album}';Artwork='{artwork}';StreamUrl='http://localhost:31337/fip-electro/cover';"
+        strip_single_quotes: true
+        normalize_whitespace: true
+        fallback_key_order:
+          - now.secondLine.title
+          - now.firstLine.title
+          - now.song.release.title
+          - now.visual.src
+          - now.song.year
+          - now.song.release.label
     buffering:
       ring_bytes: 262144
 
