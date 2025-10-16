@@ -18,12 +18,14 @@ stations:
       url: "https://fip-metadata.fly.dev/api/metadata/fip"
       poll_ms: 3000
       build:
-        format: "StreamTitle='{artist} - {title}';"
+        format: "StreamTitle='{title}';StreamArtist='{artist}';StreamAlbum='{album}';StreamYear='{year}';"
         strip_single_quotes: true
         normalize_whitespace: true
         fallback_key_order:
-          - now.secondLine.title
-          - now.firstLine.title
+          - now.secondLine.title      # artist
+          - now.firstLine.title        # title
+          - now.song.release.title     # album
+          - now.song.year              # year
     buffering:
       ring_bytes: 262144
 

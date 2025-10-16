@@ -66,16 +66,15 @@ func (h *HTTPProvider) Fetch(ctx context.Context) (string, error) {
 		return "", fmt.Errorf("parse json: %w", err)
 	}
 
-	// Extract values using fallback key order or simple keys
-	artist := h.extractValue(data, "artist")
-	title := h.extractValue(data, "title")
-
-	// Build ICY string from format template
+	// Build ICY string from format template with all placeholders
 	result := h.cfg.Build.Format
 
-	// Simple placeholder replacement
-	result = strings.ReplaceAll(result, "{artist}", artist)
-	result = strings.ReplaceAll(result, "{title}", title)
+	// Replace all placeholders: {artist}, {title}, {album}, {year}, etc.
+	placeholders := []string{"artist", "title", "album", "year", "label"}
+	for _, placeholder := range placeholders {
+		value := h.extractValue(data, placeholder)
+		result = strings.ReplaceAll(result, "{"+placeholder+"}", value)
+	}
 
 	// Apply transformations
 	if h.cfg.Build.StripSingleQuotes {
@@ -93,21 +92,18 @@ func (h *HTTPProvider) Fetch(ctx context.Context) (string, error) {
 func (h *HTTPProvider) extractValue(data map[string]interface{}, placeholder string) string {
 	// If FallbackKeyOrder is configured, use it
 	if len(h.cfg.Build.FallbackKeyOrder) > 0 {
-		// Map placeholder position to fallback path
-		// First fallback → artist, second → title
-		var path string
-		switch placeholder {
-		case "artist":
-			if len(h.cfg.Build.FallbackKeyOrder) > 0 {
-				path = h.cfg.Build.FallbackKeyOrder[0]
-			}
-		case "title":
-			if len(h.cfg.Build.FallbackKeyOrder) > 1 {
-				path = h.cfg.Build.FallbackKeyOrder[1]
-			}
+		// Map placeholder to fallback path index
+		// Order: artist, title, album, year, label, ...
+		placeholderMap := map[string]int{
+			"artist": 0,
+			"title":  1,
+			"album":  2,
+			"year":   3,
+			"label":  4,
 		}
 
-		if path != "" {
+		if idx, ok := placeholderMap[placeholder]; ok && idx < len(h.cfg.Build.FallbackKeyOrder) {
+			path := h.cfg.Build.FallbackKeyOrder[idx]
 			if val := getNestedString(data, path); val != "" {
 				return val
 			}
@@ -127,6 +123,7 @@ func getString(data map[string]interface{}, key string) string {
 
 // getNestedString traverses a nested JSON path using dot notation
 // e.g., "now.secondLine.title" → data["now"]["secondLine"]["title"]
+// Handles strings and numbers (converts numbers to strings)
 func getNestedString(data map[string]interface{}, path string) string {
 	parts := strings.Split(path, ".")
 	var current interface{} = data
@@ -140,8 +137,16 @@ func getNestedString(data map[string]interface{}, path string) string {
 		}
 	}
 
-	if str, ok := current.(string); ok {
-		return str
+	// Handle different types
+	switch v := current.(type) {
+	case string:
+		return v
+	case float64:
+		return fmt.Sprintf("%.0f", v)
+	case int:
+		return fmt.Sprintf("%d", v)
+	case bool:
+		return fmt.Sprintf("%t", v)
 	}
 	return ""
 }
