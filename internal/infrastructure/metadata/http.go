@@ -66,12 +66,16 @@ func (h *HTTPProvider) Fetch(ctx context.Context) (string, error) {
 		return "", fmt.Errorf("parse json: %w", err)
 	}
 
+	// Extract values using fallback key order or simple keys
+	artist := h.extractValue(data, "artist")
+	title := h.extractValue(data, "title")
+
 	// Build ICY string from format template
 	result := h.cfg.Build.Format
 
 	// Simple placeholder replacement
-	result = strings.ReplaceAll(result, "{artist}", getString(data, "artist"))
-	result = strings.ReplaceAll(result, "{title}", getString(data, "title"))
+	result = strings.ReplaceAll(result, "{artist}", artist)
+	result = strings.ReplaceAll(result, "{title}", title)
 
 	// Apply transformations
 	if h.cfg.Build.StripSingleQuotes {
@@ -85,9 +89,59 @@ func (h *HTTPProvider) Fetch(ctx context.Context) (string, error) {
 	return result, nil
 }
 
+// extractValue tries to extract a value using fallback paths or simple key lookup
+func (h *HTTPProvider) extractValue(data map[string]interface{}, placeholder string) string {
+	// If FallbackKeyOrder is configured, use it
+	if len(h.cfg.Build.FallbackKeyOrder) > 0 {
+		// Map placeholder position to fallback path
+		// First fallback → artist, second → title
+		var path string
+		switch placeholder {
+		case "artist":
+			if len(h.cfg.Build.FallbackKeyOrder) > 0 {
+				path = h.cfg.Build.FallbackKeyOrder[0]
+			}
+		case "title":
+			if len(h.cfg.Build.FallbackKeyOrder) > 1 {
+				path = h.cfg.Build.FallbackKeyOrder[1]
+			}
+		}
+
+		if path != "" {
+			if val := getNestedString(data, path); val != "" {
+				return val
+			}
+		}
+	}
+
+	// Fallback to simple key lookup
+	return getString(data, placeholder)
+}
+
 func getString(data map[string]interface{}, key string) string {
 	if val, ok := data[key].(string); ok {
 		return val
+	}
+	return ""
+}
+
+// getNestedString traverses a nested JSON path using dot notation
+// e.g., "now.secondLine.title" → data["now"]["secondLine"]["title"]
+func getNestedString(data map[string]interface{}, path string) string {
+	parts := strings.Split(path, ".")
+	var current interface{} = data
+
+	for _, part := range parts {
+		switch v := current.(type) {
+		case map[string]interface{}:
+			current = v[part]
+		default:
+			return ""
+		}
+	}
+
+	if str, ok := current.(string); ok {
+		return str
 	}
 	return ""
 }
