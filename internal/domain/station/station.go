@@ -87,3 +87,21 @@ func (s *Station) UpdateMetadata(meta string) {
 func (s *Station) LastMetadataUpdate() *time.Time {
 	return s.lastMetaAt.Load()
 }
+
+func (s *Station) AddClient(c *Client) {
+	s.clientsMu.Lock()
+	s.clients[c] = struct{}{}
+	s.clientsMu.Unlock()
+}
+
+func (s *Station) RemoveClient(c *Client) {
+	s.clientsMu.Lock()
+	delete(s.clients, c)
+	s.clientsMu.Unlock()
+}
+
+func (s *Station) ClientCount() int {
+	s.clientsMu.Lock()
+	defer s.clientsMu.Unlock()
+	return len(s.clients)
+}
